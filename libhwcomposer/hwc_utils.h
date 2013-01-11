@@ -31,6 +31,7 @@
 #define FINAL_TRANSFORM_MASK 0x000F
 #define MAX_NUM_DISPLAYS 4 //Yes, this is ambitious
 #define MAX_NUM_LAYERS 32
+#define MAX_DISPLAY_DIM 2048
 
 //Fwrd decls
 struct hwc_context_t;
@@ -48,6 +49,8 @@ namespace qhwc {
 //fwrd decl
 class QueuedBufferStore;
 class ExternalDisplay;
+class IFBUpdate;
+class MDPComp;
 
 struct MDPInfo {
     int version;
@@ -215,6 +218,9 @@ struct hwc_context_t {
     overlay::Overlay *mOverlay;
     //QService object
     qService::QService *mQService;
+
+    //Primary and external FB updater
+    qhwc::IFBUpdate *mFBUpdate[HWC_NUM_DISPLAY_TYPES];
     // External display related information
     qhwc::ExternalDisplay *mExtDisplay;
     qhwc::MDPInfo mMDP;
@@ -222,9 +228,12 @@ struct hwc_context_t {
     qhwc::ListStats listStats[HWC_NUM_DISPLAY_TYPES];
     qhwc::LayerCache *mLayerCache[HWC_NUM_DISPLAY_TYPES];
     qhwc::LayerProp *layerProp[HWC_NUM_DISPLAY_TYPES];
+    qhwc::MDPComp *mMDPComp;
 
     //Securing in progress indicator
     bool mSecuring;
+    //External Display configuring progress indicator
+    bool mExtDispConfiguring;
     //Display in secure mode indicator
     bool mSecureMode;
     //Lock to prevent set from being called while blanking
@@ -234,5 +243,13 @@ struct hwc_context_t {
     //Vsync
     struct vsync_state vstate;
 };
+
+static inline bool isSkipPresent (hwc_context_t *ctx, int dpy) {
+    return  ctx->listStats[dpy].skipCount;
+}
+
+static inline bool isYuvPresent (hwc_context_t *ctx, int dpy) {
+    return  ctx->listStats[dpy].yuvCount;
+}
 
 #endif //HWC_UTILS_H
